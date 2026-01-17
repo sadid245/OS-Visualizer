@@ -31,7 +31,7 @@ function simulatePaging() {
     let pointer = 0; 
     let refBits = Array(frameCount).fill(0); 
 
-   
+    
     pages.forEach((page, timeStep) => {
         let isHit = false;
         let hitIndex = frames.indexOf(page);
@@ -46,6 +46,7 @@ function simulatePaging() {
 
             if (frames.includes(null)) {
                 replaceIdx = frames.indexOf(null);
+                
                 if(algo === "FIFO" || algo === "SC") {
                     replaceIdx = pointer;
                     pointer = (pointer + 1) % frameCount;
@@ -96,12 +97,10 @@ function renderPaging(pages, history, status, hits, misses, frameCount) {
     
     let html = `<table class="grid-table">`;
     
-    
     html += `<tr><th style="background:#e5e7eb; color:#374151">Ref</th>`;
     pages.forEach((p, i) => html += `<th class="hidden-cell col-${i}">${p}</th>`);
     html += `</tr>`;
 
-    
     for (let f = 0; f < frameCount; f++) {
         html += `<tr><td style="font-weight:900; color:#4f46e5">Frame ${f+1}</td>`;
         history.forEach((stepFrames, timeIndex) => {
@@ -111,7 +110,6 @@ function renderPaging(pages, history, status, hits, misses, frameCount) {
         html += `</tr>`;
     }
 
-    
     html += `<tr><td style="font-weight:900">Status</td>`;
     status.forEach((s, i) => {
         let className = s === "Hit" ? "hit" : "miss";
@@ -125,19 +123,26 @@ function renderPaging(pages, history, status, hits, misses, frameCount) {
     
     pages.forEach((_, colIndex) => {
         let timeoutId = setTimeout(() => {
-            
             let cells = document.querySelectorAll(`.col-${colIndex}`);
-            cells.forEach(c => c.classList.remove('hidden-cell'));
-            cells.forEach(c => c.classList.add('reveal-cell'));
+            cells.forEach(c => {
+                c.classList.remove('hidden-cell');
+                c.classList.add('reveal-cell');
+            });
             
             
             if(colIndex === pages.length - 1) {
                 let total = hits + misses;
-                let ratio = total === 0 ? 0 : ((hits/total)*100).toFixed(2);
+                let hitRatio = total === 0 ? 0 : ((hits/total)*100).toFixed(2);
+                let missRatio = total === 0 ? 0 : ((misses/total)*100).toFixed(2);
+
                 stats.innerHTML = `
                     <div class="stat-box"><div class="stat-val">${hits}</div><div class="stat-label">Hits</div></div>
                     <div class="stat-box"><div class="stat-val">${misses}</div><div class="stat-label">Misses</div></div>
-                    <div class="stat-box"><div class="stat-val">${ratio}%</div><div class="stat-label">Hit Ratio</div></div>
+                    <div class="stat-box"><div class="stat-val">${hitRatio}%</div><div class="stat-label">Hit Ratio</div></div>
+                    <div class="stat-box" style="border-color:var(--miss); color:var(--miss)">
+                        <div class="stat-val" style="color:var(--miss)">${missRatio}%</div>
+                        <div class="stat-label" style="color:var(--miss)">Miss Ratio</div>
+                    </div>
                 `;
             }
         }, colIndex * 600);
@@ -163,7 +168,6 @@ function simulateMemory() {
     
     let nextFitPtr = 0;
 
-    
     processes.forEach((pSize, pIdx) => {
         let bestIdx = -1;
 
@@ -215,7 +219,6 @@ function renderMemory(processes, allocation, blocks) {
     const container = document.getElementById("memory-result");
     const stats = document.getElementById("memory-stats");
 
-    
     let html = `<table class="grid-table" style="width:100%; text-align:left">
         <tr style="background:#f3f4f6">
             <th>Process ID</th>
@@ -226,7 +229,6 @@ function renderMemory(processes, allocation, blocks) {
             <th>Status</th>
         </tr>`;
 
-    
     let rowsData = [];
     let allocatedCount = 0;
 
@@ -252,34 +254,30 @@ function renderMemory(processes, allocation, blocks) {
         `);
     });
 
-    
     html += `<tbody id="mem-body"></tbody></table>`;
     container.innerHTML = html;
     
     const tbody = document.getElementById("mem-body");
     stats.innerHTML = "";
 
-   
+    
     rowsData.forEach((rowHtml, index) => {
         let timeoutId = setTimeout(() => {
-            
             tbody.insertAdjacentHTML('beforeend', rowHtml);
-            
-            
             let row = tbody.lastElementChild;
             requestAnimationFrame(() => {
                 row.classList.remove('hidden-cell');
                 row.classList.add('reveal-cell');
             });
 
-            
             if(index === rowsData.length - 1) {
+                let waiting = processes.length - allocatedCount;
+                
                 stats.innerHTML = `
                     <div class="stat-box"><div class="stat-val">${allocatedCount}</div><div class="stat-label">Allocated</div></div>
-                    <div class="stat-box"><div class="stat-val">${processes.length - allocatedCount}</div><div class="stat-label">Waiting</div></div>
+                    <div class="stat-box"><div class="stat-val">${waiting}</div><div class="stat-label">Waiting</div></div>
                 `;
             }
-
         }, index * 800);
         simulationIntervals.push(timeoutId);
     });

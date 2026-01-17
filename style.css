@@ -3,7 +3,7 @@
     --bg: #f3f4f6;
     --card: #ffffff;
     --border: #e5e7eb;
-    --text: #111827;
+    --text: #111827; 
     --miss: #ef4444; 
     --hit: #10b981;  
 }
@@ -45,6 +45,7 @@ nav {
     color: #000000;
     cursor: pointer;
     border-radius: 6px;
+    transition: all 0.2s;
 }
 
 .tabs button.active {
@@ -79,7 +80,7 @@ nav {
 
 .input-group label {
     font-size: 0.9rem;
-    font-weight: 800;
+    font-weight: 900;
     color: #374151;
     margin-bottom: 8px;
     text-transform: uppercase;
@@ -93,6 +94,7 @@ input, select {
     font-weight: 700;
     width: 100%;
     color: #111;
+    background: #fff;
 }
 
 .row-inputs {
