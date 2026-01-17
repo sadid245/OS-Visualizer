@@ -1,317 +1,286 @@
-// ---- TABS LOGIC ----
-function openTab(tabName) {
-    const contents = document.querySelectorAll('.tab-content');
-    const buttons = document.querySelectorAll('.tab-btn');
+let simulationIntervals = [];
 
-    contents.forEach(c => c.classList.remove('active-content'));
-    buttons.forEach(b => b.classList.remove('active'));
-
-    document.getElementById(tabName).classList.add('active-content');
-    event.currentTarget.classList.add('active');
+function clearSimulations() {
+    simulationIntervals.forEach(id => clearTimeout(id));
+    simulationIntervals = [];
 }
 
-// ==========================================
-//  PART 1: PAGE REPLACEMENT ALGORITHM
-// ==========================================
+function showTab(tab) {
+    document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    event.target.classList.add('active');
+}
 
-function simulatePageReplacement() {
-    const refInput = document.getElementById("reference").value;
-    const framesInput = document.getElementById("frames").value;
+
+function simulatePaging() {
+    clearSimulations();
     
-    if(!refInput || !framesInput) {
-        alert("Please enter reference string and frame count.");
-        return;
-    }
+    const refRaw = document.getElementById("ref-string").value.trim();
+    const frameCount = parseInt(document.getElementById("frame-count").value);
+    const algo = document.getElementById("algo-paging").value;
 
-    const ref = refInput.trim().split(/\s+/).map(Number);
-    const frameCount = parseInt(framesInput);
-    const algo = document.getElementById("algorithm").value;
-
+    if (!refRaw) { alert("Please enter a reference string"); return; }
+    
+    const pages = refRaw.split(/\s+/).map(Number);
     let frames = Array(frameCount).fill(null);
-    let refBits = Array(frameCount).fill(0);
-    let pointer = 0; // FIFO/NextFit pointer
-    let hits = 0;
-    let misses = 0;
-    const steps = [];
+    let history = []; 
+    let status = [];  
+    let hits = 0, misses = 0;
 
-    ref.forEach((page, index) => {
-        let status = "Hit";
+    let pointer = 0; 
+    let refBits = Array(frameCount).fill(0); 
 
-        if (frames.includes(page)) {
+   
+    pages.forEach((page, timeStep) => {
+        let isHit = false;
+        let hitIndex = frames.indexOf(page);
+
+        if (hitIndex !== -1) {
+            isHit = true;
             hits++;
-            if (algo === "SC") {
-                refBits[frames.indexOf(page)] = 1;
-            }
-            if (algo === "LRU") {
-                // For LRU, strictly speaking, we don't move data, but logic relies on history
-                // No change to frames array needed on hit for standard visual representation
-            }
+            if(algo === "SC") refBits[hitIndex] = 1; 
         } else {
             misses++;
-            status = "Miss";
+            let replaceIdx = -1;
 
             if (frames.includes(null)) {
-                // If there is empty space, just fill it
-                const emptyIdx = frames.indexOf(null);
-                frames[emptyIdx] = page;
+                replaceIdx = frames.indexOf(null);
                 if(algo === "FIFO" || algo === "SC") {
-                    // FIFO pointer logic usually waits until full, but for visualizers:
-                    // If we fill purely sequentially, pointer management depends on implementation.
-                    // Here we let pointer stay 0 until full, or increment?
-                    // Let's increment pointer to keep FIFO strict circular queue
-                     pointer = (pointer + 1) % frameCount; 
-                     // NOTE: Standard FIFO usually fills 0,1,2 then starts replacing 0. 
-                     // My fix: If we just filled index 'emptyIdx', ensuring pointer tracks correctly involves just incrementing.
-                }
-            } 
-            else {
-                // Page Replacement Needed
-                if (algo === "FIFO") {
-                    frames[pointer] = page;
+                    replaceIdx = pointer;
                     pointer = (pointer + 1) % frameCount;
                 }
+            } else {
+                if(algo === "FIFO") {
+                    replaceIdx = pointer;
+                    pointer = (pointer + 1) % frameCount;
+                } 
                 else if (algo === "LRU") {
-                    let lruIndex = 0;
-                    let min = Infinity;
-                    frames.forEach((f, i) => {
-                        let lastUsed = ref.slice(0, index).lastIndexOf(f);
-                        if (lastUsed < min) {
-                            min = lastUsed;
-                            lruIndex = i;
-                        }
-                    });
-                    frames[lruIndex] = page;
+                    let lastUses = frames.map(f => pages.slice(0, timeStep).lastIndexOf(f));
+                    replaceIdx = lastUses.indexOf(Math.min(...lastUses));
                 }
                 else if (algo === "OPT") {
-                    let farthest = -1;
-                    let replaceIndex = 0;
-                    frames.forEach((f, i) => {
-                        let nextUse = ref.slice(index + 1).indexOf(f);
-                        if (nextUse === -1) {
-                            replaceIndex = i;
-                            farthest = Infinity;
-                        } else if (nextUse > farthest) {
-                            farthest = nextUse;
-                            replaceIndex = i;
-                        }
+                    let nextUses = frames.map(f => {
+                        let next = pages.slice(timeStep + 1).indexOf(f);
+                        return next === -1 ? Infinity : next;
                     });
-                    frames[replaceIndex] = page;
+                    replaceIdx = nextUses.indexOf(Math.max(...nextUses));
                 }
                 else if (algo === "SC") {
-                    while (true) {
-                        if (refBits[pointer] === 0) {
-                            frames[pointer] = page;
-                            refBits[pointer] = 1; // New pages get a second chance initially? Usually No, but referenced ones do.
-                            // Standard SC: Replace found 0, set its R=1? No, set new page to R=0 or R=1 depending on variant. 
-                            // Usually new page enters with R=0. But if it's hit, R=1.
-                            refBits[pointer] = 0; // Reset for new page
+                    while(true) {
+                        if(refBits[pointer] === 0) {
+                            replaceIdx = pointer;
                             pointer = (pointer + 1) % frameCount;
                             break;
-                        } else {
-                            refBits[pointer] = 0; // Give second chance
-                            pointer = (pointer + 1) % frameCount;
                         }
+                        refBits[pointer] = 0;
+                        pointer = (pointer + 1) % frameCount;
                     }
                 }
             }
+            frames[replaceIdx] = page;
+            if(algo === "SC") refBits[replaceIdx] = 0; 
         }
 
-        steps.push({
-            page,
-            frames: [...frames],
-            refBits: [...refBits],
-            status
+        history.push([...frames]);
+        status.push(isHit ? "Hit" : "Miss");
+    });
+
+    renderPaging(pages, history, status, hits, misses, frameCount);
+}
+
+function renderPaging(pages, history, status, hits, misses, frameCount) {
+    const container = document.getElementById("paging-result");
+    const stats = document.getElementById("paging-stats");
+    
+    
+    let html = `<table class="grid-table">`;
+    
+    
+    html += `<tr><th style="background:#e5e7eb; color:#374151">Ref</th>`;
+    pages.forEach((p, i) => html += `<th class="hidden-cell col-${i}">${p}</th>`);
+    html += `</tr>`;
+
+    
+    for (let f = 0; f < frameCount; f++) {
+        html += `<tr><td style="font-weight:900; color:#4f46e5">Frame ${f+1}</td>`;
+        history.forEach((stepFrames, timeIndex) => {
+            let val = stepFrames[f] === null ? '-' : stepFrames[f];
+            html += `<td class="hidden-cell col-${timeIndex}">${val}</td>`;
         });
-    });
-
-    renderPagingTable(steps, frameCount, algo, hits, misses);
-}
-
-function renderPagingTable(steps, frameCount, algo, hits, misses) {
-    let tableHTML = "<table><tr><th>Page</th>";
-    for (let i = 0; i < frameCount; i++) tableHTML += `<th>Frame ${i+1}</th>`;
-    tableHTML += "<th>Status</th></tr></table>";
-
-    document.getElementById("output-paging").innerHTML = tableHTML;
-    const table = document.querySelector("#output-paging table");
-
-    steps.forEach((step, index) => {
-        setTimeout(() => {
-            const row = document.createElement("tr");
-            row.classList.add("step-row");
-            row.innerHTML = `<td>${step.page}</td>`;
-
-            step.frames.forEach((f, i) => {
-                let cellContent = f !== null ? f : "-";
-                if (algo === "SC") {
-                    cellContent += `<span class="ref-bit">R=${step.refBits[i]}</span>`;
-                }
-                row.innerHTML += `<td>${cellContent}</td>`;
-            });
-
-            row.innerHTML += `<td class="${step.status === 'Hit' ? 'hit' : 'miss'}">${step.status}</td>`;
-            table.appendChild(row);
-
-            requestAnimationFrame(() => row.classList.add("show"));
-        }, index * 500);
-    });
-
-    const total = hits + misses;
-    document.getElementById("summary-paging").innerHTML = `
-        Hits: ${hits} | Misses: ${misses} <br>
-        Hit Ratio: ${(hits / total).toFixed(2)} | Miss Ratio: ${(misses / total).toFixed(2)}
-    `;
-}
-
-
-// ==========================================
-//  PART 2: MEMORY ALLOCATION ALGORITHM
-// ==========================================
-
-function simulateMemoryAllocation() {
-    const blockSizeInput = document.getElementById("block-sizes").value;
-    const procSizeInput = document.getElementById("process-sizes").value;
-
-    if(!blockSizeInput || !procSizeInput) {
-        alert("Please enter block sizes and process sizes.");
-        return;
+        html += `</tr>`;
     }
 
-    // Clone arrays because we modify blocks (mark them as busy)
-    // We assume Fixed Partitioning: A block can hold 1 process.
-    let originalBlocks = blockSizeInput.trim().split(/\s+/).map(Number);
-    let processes = procSizeInput.trim().split(/\s+/).map(Number);
-    let algo = document.getElementById("mem-algorithm").value;
-
-    let blocks = [...originalBlocks]; // Size of blocks
-    let allocation = new Array(processes.length).fill(-1); // Stores block index for each process
-    let blockStatus = new Array(blocks.length).fill(false); // false = free, true = busy
     
-    // For Next Fit
-    let lastAllocatedIndex = 0;
+    html += `<tr><td style="font-weight:900">Status</td>`;
+    status.forEach((s, i) => {
+        let className = s === "Hit" ? "hit" : "miss";
+        html += `<td class="status-cell ${className} hidden-cell col-${i}">${s}</td>`;
+    });
+    html += `</tr></table>`;
 
-    let steps = [];
+    container.innerHTML = html;
+    stats.innerHTML = "";
 
-    processes.forEach((process, pIndex) => {
+    
+    pages.forEach((_, colIndex) => {
+        let timeoutId = setTimeout(() => {
+            
+            let cells = document.querySelectorAll(`.col-${colIndex}`);
+            cells.forEach(c => c.classList.remove('hidden-cell'));
+            cells.forEach(c => c.classList.add('reveal-cell'));
+            
+            
+            if(colIndex === pages.length - 1) {
+                let total = hits + misses;
+                let ratio = total === 0 ? 0 : ((hits/total)*100).toFixed(2);
+                stats.innerHTML = `
+                    <div class="stat-box"><div class="stat-val">${hits}</div><div class="stat-label">Hits</div></div>
+                    <div class="stat-box"><div class="stat-val">${misses}</div><div class="stat-label">Misses</div></div>
+                    <div class="stat-box"><div class="stat-val">${ratio}%</div><div class="stat-label">Hit Ratio</div></div>
+                `;
+            }
+        }, colIndex * 600);
+        simulationIntervals.push(timeoutId);
+    });
+}
+
+
+function simulateMemory() {
+    clearSimulations();
+
+    const blockRaw = document.getElementById("block-sizes").value.trim();
+    const procRaw = document.getElementById("process-sizes").value.trim();
+    const algo = document.getElementById("algo-mem").value;
+
+    if(!blockRaw || !procRaw) { alert("Enter data"); return; }
+
+    let blocks = blockRaw.split(/\s+/).map(Number);
+    let originalBlocks = [...blocks];
+    let processes = procRaw.split(/\s+/).map(Number);
+    let allocation = Array(processes.length).fill(-1); 
+    let blockBusy = Array(blocks.length).fill(false);
+    
+    let nextFitPtr = 0;
+
+    
+    processes.forEach((pSize, pIdx) => {
         let bestIdx = -1;
 
-        if (algo === "FF") { // First Fit
-            for (let i = 0; i < blocks.length; i++) {
-                if (!blockStatus[i] && blocks[i] >= process) {
-                    bestIdx = i;
-                    break;
-                }
-            }
-        } 
-        else if (algo === "NF") { // Next Fit
+        if(algo === "FF") {
+            bestIdx = blocks.findIndex((b, i) => !blockBusy[i] && b >= pSize);
+        }
+        else if(algo === "NF") {
             let count = 0;
-            let i = lastAllocatedIndex;
-            
-            // Search circularly starting from lastAllocatedIndex
-            while (count < blocks.length) {
-                if (!blockStatus[i] && blocks[i] >= process) {
+            let i = nextFitPtr;
+            while(count < blocks.length) {
+                if(!blockBusy[i] && blocks[i] >= pSize) {
                     bestIdx = i;
-                    lastAllocatedIndex = i; // Update pointer
+                    nextFitPtr = i;
                     break;
                 }
                 i = (i + 1) % blocks.length;
                 count++;
             }
         }
-        else if (algo === "BF") { // Best Fit
-            let minFrag = Infinity;
-            for (let i = 0; i < blocks.length; i++) {
-                if (!blockStatus[i] && blocks[i] >= process) {
-                    let frag = blocks[i] - process;
-                    if (frag < minFrag) {
-                        minFrag = frag;
-                        bestIdx = i;
-                    }
+        else if(algo === "BF") {
+            let minDiff = Infinity;
+            blocks.forEach((b, i) => {
+                if(!blockBusy[i] && b >= pSize && (b - pSize) < minDiff) {
+                    minDiff = b - pSize;
+                    bestIdx = i;
                 }
-            }
+            });
         }
-        else if (algo === "WF") { // Worst Fit
-            let maxFrag = -1;
-            for (let i = 0; i < blocks.length; i++) {
-                if (!blockStatus[i] && blocks[i] >= process) {
-                    let frag = blocks[i] - process;
-                    if (frag > maxFrag) {
-                        maxFrag = frag;
-                        bestIdx = i;
-                    }
+        else if(algo === "WF") {
+            let maxDiff = -1;
+            blocks.forEach((b, i) => {
+                if(!blockBusy[i] && b >= pSize && (b - pSize) > maxDiff) {
+                    maxDiff = b - pSize;
+                    bestIdx = i;
                 }
-            }
+            });
         }
 
-        // Save Step
-        let status = "Not Allocated";
-        let frag = "-";
-        let blockId = "-";
-        let blockSize = "-";
-
-        if (bestIdx !== -1) {
-            blockStatus[bestIdx] = true; // Mark block as busy
-            allocation[pIndex] = bestIdx;
-            
-            status = "Allocated";
-            blockId = bestIdx + 1; // 1-based index for display
-            blockSize = blocks[bestIdx];
-            frag = blockSize - process;
+        if(bestIdx !== -1) {
+            allocation[pIdx] = bestIdx;
+            blockBusy[bestIdx] = true;
         }
-
-        steps.push({
-            pId: pIndex + 1,
-            pSize: process,
-            blockId: blockId,
-            blockSize: blockSize,
-            frag: frag,
-            status: status
-        });
     });
 
-    renderMemoryTable(steps);
+    renderMemory(processes, allocation, originalBlocks);
 }
 
-function renderMemoryTable(steps) {
-    let tableHTML = `
-        <table>
-            <tr>
-                <th>Process No.</th>
-                <th>Process Size</th>
-                <th>Block No.</th>
-                <th>Block Size</th>
-                <th>Fragment</th>
-                <th>Status</th>
-            </tr>
-        </table>`;
+function renderMemory(processes, allocation, blocks) {
+    const container = document.getElementById("memory-result");
+    const stats = document.getElementById("memory-stats");
 
-    document.getElementById("output-memory").innerHTML = tableHTML;
-    const table = document.querySelector("#output-memory table");
-
-    steps.forEach((step, index) => {
-        setTimeout(() => {
-            const row = document.createElement("tr");
-            row.classList.add("step-row");
-
-            row.innerHTML = `
-                <td>${step.pId}</td>
-                <td>${step.pSize}</td>
-                <td>${step.blockId}</td>
-                <td>${step.blockSize}</td>
-                <td>${step.frag}</td>
-                <td class="${step.status === 'Allocated' ? 'allocated' : 'not-allocated'}">${step.status}</td>
-            `;
-
-            table.appendChild(row);
-            requestAnimationFrame(() => row.classList.add("show"));
-        }, index * 500); // Animation delay
-    });
     
-    // Calculate simple stats
-    const allocatedCount = steps.filter(s => s.status === "Allocated").length;
-    document.getElementById("summary-memory").innerHTML = `
-        Total Processes: ${steps.length} <br>
-        Allocated: ${allocatedCount} <br>
-        Not Allocated: ${steps.length - allocatedCount}
-    `;
+    let html = `<table class="grid-table" style="width:100%; text-align:left">
+        <tr style="background:#f3f4f6">
+            <th>Process ID</th>
+            <th>Size</th>
+            <th>Block Allocated</th>
+            <th>Block Size</th>
+            <th>Internal Fragmentation</th>
+            <th>Status</th>
+        </tr>`;
+
+    
+    let rowsData = [];
+    let allocatedCount = 0;
+
+    processes.forEach((p, i) => {
+        let blockIdx = allocation[i];
+        let status = blockIdx !== -1 ? "Allocated" : "Not Allocated";
+        let statusClass = blockIdx !== -1 ? "hit" : "miss";
+        let blockNo = blockIdx !== -1 ? blockIdx + 1 : "-";
+        let blockSize = blockIdx !== -1 ? blocks[blockIdx] : "-";
+        let frag = blockIdx !== -1 ? (blocks[blockIdx] - p) : "-";
+
+        if(blockIdx !== -1) allocatedCount++;
+
+        rowsData.push(`
+            <tr class="hidden-cell row-${i}">
+                <td>P-${i+1}</td>
+                <td>${p}</td>
+                <td>${blockNo}</td>
+                <td>${blockSize}</td>
+                <td>${frag}</td>
+                <td><span class="status-cell ${statusClass}" style="padding:4px 8px; border-radius:4px">${status}</span></td>
+            </tr>
+        `);
+    });
+
+    
+    html += `<tbody id="mem-body"></tbody></table>`;
+    container.innerHTML = html;
+    
+    const tbody = document.getElementById("mem-body");
+    stats.innerHTML = "";
+
+   
+    rowsData.forEach((rowHtml, index) => {
+        let timeoutId = setTimeout(() => {
+            
+            tbody.insertAdjacentHTML('beforeend', rowHtml);
+            
+            
+            let row = tbody.lastElementChild;
+            requestAnimationFrame(() => {
+                row.classList.remove('hidden-cell');
+                row.classList.add('reveal-cell');
+            });
+
+            
+            if(index === rowsData.length - 1) {
+                stats.innerHTML = `
+                    <div class="stat-box"><div class="stat-val">${allocatedCount}</div><div class="stat-label">Allocated</div></div>
+                    <div class="stat-box"><div class="stat-val">${processes.length - allocatedCount}</div><div class="stat-label">Waiting</div></div>
+                `;
+            }
+
+        }, index * 800);
+        simulationIntervals.push(timeoutId);
+    });
 }

@@ -2,54 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OS Algorithm Visualizer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Algorithms</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="container">
-        <h1>OS Algorithm Visualizer</h1>
-
+    <nav>
+        <div class="brand">OS VISUALIZER</div>
         <div class="tabs">
-            <button class="tab-btn active" onclick="openTab('page-replacement')">Page Replacement</button>
-            <button class="tab-btn" onclick="openTab('memory-allocation')">Memory Allocation</button>
+            <button class="active" onclick="showTab('paging')">Page Replacement</button>
+            <button onclick="showTab('memory')">Memory Allocation</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div id="paging" class="tab-pane active">
+            <div class="controls-card">
+                <div class="input-group">
+                    <label>Reference String</label>
+                    <input type="text" id="ref-string" value="7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1">
+                </div>
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label>Frames</label>
+                        <input type="number" id="frame-count" value="3" min="1" max="10">
+                    </div>
+                    <div class="input-group">
+                        <label>Algorithm</label>
+                        <select id="algo-paging">
+                            <option value="FIFO">FIFO</option>
+                            <option value="LRU">LRU</option>
+                            <option value="OPT">Optimal</option>
+                            <option value="SC">Second Chance</option>
+                        </select>
+                    </div>
+                    <button onclick="simulatePaging()">Simulate</button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <span class="dot hit"></span> Hit
+                <span class="dot miss"></span> Miss
+            </div>
+
+            <div id="paging-result" class="result-container"></div>
+            <div id="paging-stats" class="stats-container"></div>
         </div>
 
-        <div id="page-replacement" class="tab-content active-content">
-            <h2>Page Replacement Algorithms</h2>
-            <div class="controls">
-                <input id="reference" placeholder="Reference String (e.g. 7 0 1 2 0 3 0 4)">
-                <input id="frames" type="number" placeholder="Frames">
-                <select id="algorithm">
-                    <option value="FIFO">FIFO</option>
-                    <option value="LRU">LRU</option>
-                    <option value="OPT">Optimal</option>
-                    <option value="SC">Second Chance</option>
-                </select>
-                <button onclick="simulatePageReplacement()">Simulate Paging</button>
+        <div id="memory" class="tab-pane">
+            <div class="controls-card">
+                <div class="input-group">
+                    <label>Block Sizes</label>
+                    <input type="text" id="block-sizes" value="100 500 200 300 600">
+                </div>
+                <div class="input-group">
+                    <label>Process Sizes</label>
+                    <input type="text" id="process-sizes" value="212 417 112 426">
+                </div>
+                <div class="row-inputs">
+                    <div class="input-group">
+                        <label>Strategy</label>
+                        <select id="algo-mem">
+                            <option value="FF">First Fit</option>
+                            <option value="NF">Next Fit</option>
+                            <option value="BF">Best Fit</option>
+                            <option value="WF">Worst Fit</option>
+                        </select>
+                    </div>
+                    <button onclick="simulateMemory()">Simulate</button>
+                </div>
             </div>
-            <div id="output-paging"></div>
-            <div id="summary-paging" class="summary"></div>
-        </div>
 
-        <div id="memory-allocation" class="tab-content">
-            <h2>Memory Allocation Algorithms</h2>
-            <div class="controls memory-controls">
-                <input id="block-sizes" placeholder="Block Sizes (e.g. 100 500 200 300 600)">
-                <input id="process-sizes" placeholder="Process Sizes (e.g. 212 417 112 426)">
-                <select id="mem-algorithm">
-                    <option value="FF">First Fit</option>
-                    <option value="NF">Next Fit</option>
-                    <option value="BF">Best Fit</option>
-                    <option value="WF">Worst Fit</option>
-                </select>
-                <button onclick="simulateMemoryAllocation()">Simulate Allocation</button>
-            </div>
-            <div id="output-memory"></div>
-            <div id="summary-memory" class="summary"></div>
+            <div id="memory-result" class="result-container"></div>
+            <div id="memory-stats" class="stats-container"></div>
         </div>
 
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>
