@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+
+body {
+    font-family: "Lexend", sans-serif;
+    background: rgba(233, 143, 41, 0.1);
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    background: rgba(255, 178, 90, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    text-align: center;
+    color: #4a3b2a;
+}
+
+h2 { font-size: 1.2rem; margin-bottom: 15px; }
+
+/* TABS */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    background: #e7dacc;
+    color: #4a3b2a;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.tab-btn.active {
+    background: #FF900E;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+
+.active-content {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* CONTROLS */
+.controls {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.memory-controls {
+    grid-template-columns: 1.5fr 1.5fr 1fr; /* Adjusted for memory inputs */
+}
+
+input, select, button {
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+button {
+    grid-column: span 3;
+    background: #FF900E;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #ec7f03;
+}
+
+/* TABLE STYLES */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background: #FF900E;
+    color: white;
+}
+
+/* ANIMATION ROWS */
+.step-row {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.5s ease;
+}
+
+.step-row.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* STATUS COLORS */
+.hit, .allocated {
+    color: white;
+    font-weight: bold;
+    background-color: rgb(3, 163, 3);
+}
+
+.miss, .not-allocated {
+    color: white;
+    font-weight: bold;
+    background-color: rgb(241, 49, 49);
+}
+
+.ref-bit {
+    font-size: 0.8em;
+    color: #555;
+    display: block;
+}
+
+/* SUMMARY BOX */
+.summary {
+    margin-top: 20px;
+    padding: 15px;
+    font-size: 18px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    background-color: #fff8f0;
+    border-radius: 8px;
+    font-weight: bold;
+    color: #333;
+}

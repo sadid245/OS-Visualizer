@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OS Algorithm Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>OS Algorithm Visualizer</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab('page-replacement')">Page Replacement</button>
+            <button class="tab-btn" onclick="openTab('memory-allocation')">Memory Allocation</button>
+        </div>
+
+        <div id="page-replacement" class="tab-content active-content">
+            <h2>Page Replacement Algorithms</h2>
+            <div class="controls">
+                <input id="reference" placeholder="Reference String (e.g. 7 0 1 2 0 3 0 4)">
+                <input id="frames" type="number" placeholder="Frames">
+                <select id="algorithm">
+                    <option value="FIFO">FIFO</option>
+                    <option value="LRU">LRU</option>
+                    <option value="OPT">Optimal</option>
+                    <option value="SC">Second Chance</option>
+                </select>
+                <button onclick="simulatePageReplacement()">Simulate Paging</button>
+            </div>
+            <div id="output-paging"></div>
+            <div id="summary-paging" class="summary"></div>
+        </div>
+
+        <div id="memory-allocation" class="tab-content">
+            <h2>Memory Allocation Algorithms</h2>
+            <div class="controls memory-controls">
+                <input id="block-sizes" placeholder="Block Sizes (e.g. 100 500 200 300 600)">
+                <input id="process-sizes" placeholder="Process Sizes (e.g. 212 417 112 426)">
+                <select id="mem-algorithm">
+                    <option value="FF">First Fit</option>
+                    <option value="NF">Next Fit</option>
+                    <option value="BF">Best Fit</option>
+                    <option value="WF">Worst Fit</option>
+                </select>
+                <button onclick="simulateMemoryAllocation()">Simulate Allocation</button>
+            </div>
+            <div id="output-memory"></div>
+            <div id="summary-memory" class="summary"></div>
+        </div>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
